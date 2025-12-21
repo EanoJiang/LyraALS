@@ -484,3 +484,51 @@ SpringArm中勾上使用 Pawn 控制旋转
 ![1766159134918](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251219234841723-1151890376.png)
 
 ##### 把这个姿势混合逻辑放到ABP_Layers中
+
+ALI_Lyra中加一个CycleLayer
+
+![1766323669009](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234625126-1284690845.png)
+
+把Cycle(State)的逻辑放到ABP_Layers的CycleLayer中
+
+![1766324157023](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234625907-194319527.png)
+
+这里的CurrentGate需要在ABP_Layers新建一个函数GetABPBase(Pure)，来获取ABP_Base中的函数和变量
+
+![1766325041708](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234626451-1711734009.png)
+
+在ABP_Layers的CycleLayer中就可以获取到CurrentGate这个参数了
+
+![1766325445539](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234626903-1456058766.png)
+
+和IdleOnUpdate一样，逻辑封装到CycleOnUpdate中，然后CycleAnim变量在每个子ABP_Layer中设置对应动画资产
+
+![1766328494884](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234627265-1600848144.png)
+
+![1766328535006](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234627694-36516877.png)
+
+> 注意：这些Anim变量都不用设置默认值
+>
+> 我们应该在角色事件蓝图的初始化中设置Anim Class为ABP_UnarmedLayer：
+>
+> ![1766329903943](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234628193-534708978.png)
+
+各子ABP_Layer的资产设置:
+
+以ABP_Pistol为例，
+
+![1766328565701](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234628516-73355935.png)
+
+> 如何批量设置动画资产的RootMotion：
+>
+> ![1766327868432](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234628907-1498521353.png)
+>
+> ![1766327907003](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234629312-2094306299.png)
+>
+> ![1766327841572](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234629783-1197221970.png)
+
+效果：
+
+![1766330258161](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251221234637347-1686160871.gif)
+
+## 08 Debug Options Intermediate
