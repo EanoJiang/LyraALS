@@ -954,6 +954,8 @@ debug出这个加速度2D：
 ### 回到ABP_Layers的StopLayer添加Sequence Evaluator
 
 > 播放停止动画只需要在切到Stop状态才会调用，因此On Become Relevant
+>
+> `On Become Relevant`：当该对象 / 节点 **从 “无关状态” 变为 “相关状态” 时触发**
 
 ![1767174051702](https://img2024.cnblogs.com/blog/3614909/202512/3614909-20251231234303363-1361903033.png)
 
@@ -1165,7 +1167,7 @@ Start->Cycle过渡的混合逻辑全部改为惯性(Inertialization)，混合时
 
 ![1767262921241](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260101201030149-850927727.png)
 
-这会改善两个动画切换时因为迈出脚不一样导致的顿感
+这会改善两个动画切换时因为迈出脚不一样导致的停顿，但是还是会有不流畅的感觉，最好还是要保证动画资产的连贯性
 
 ### Warping的设置
 
@@ -1197,4 +1199,149 @@ Start->Cycle过渡的混合逻辑全部改为惯性(Inertialization)，混合时
 
 ## 13 Pivot animations Pro
 
-> 移动时转身
+> 移动时急转
+
+### 导入动画资产，设置为根运动、应用曲线压缩
+
+### PivotState
+
+> Alias
+>
+> 相当于把那些要跳转到同一个State的State集合到一个Alias，然后只需要让这个Alias跳转到目标State即可
+
+![1767275422009](image/LyraALS学习/1767275422009.png)
+
+![1767275364471](image/LyraALS学习/1767275364471.png)
+
+### PivotAlias -> Pivot
+
+如果是180度急转：移动速度与加速度反向，也就是二者的单位向量的点积为-1，也就是cos180°
+
+其他角度的急转都是钝角，也就是点积<0即可
+
+![1767276002425](image/LyraALS学习/1767276002425.png)
+
+### Pivot->Stop
+
+直接应用stop的共享条件
+
+### Pivot->Cycle
+
+#### 跳转条件1
+
+> 进入急转状态时，需要保存当前的加速度
+
+在PivotState的输出动画姿势上加一个回调函数SetupPivotState,这个函数在当前节点激活时调用
+
+![1767339826348](image/LyraALS学习/1767339826348.png)
+
+获取 急转状态时候的加速度
+
+![1767339958010](image/LyraALS学习/1767339958010.png)
+
+Pivot->Cycle的跳转条件1：角色速度 与 急转后的加速度 向量不平行
+
+![1767340042798](image/LyraALS学习/1767340042798.png)
+
+#### 跳转条件2
+
+新建一个蓝图类AnimNotify
+
+![1767340784768](image/LyraALS学习/1767340784768.png)
+
+![1767340818186](image/LyraALS学习/1767340818186.png)
+
+Pivot->Cycle的跳转条件2：当前的Pivot动画播放完了
+
+![1767340983648](image/LyraALS学习/1767340983648.png)
+
+因此要在每个Pivot动画资产的末尾加上这个动画通知ANS_Exit_Pivot
+
+![1767341315601](image/LyraALS学习/1767341315601.png)
+
+### PivotLayer
+
+ALI_lyra新建一个PivotLayer
+
+![1767344772352](image/LyraALS学习/1767344772352.png)
+
+ABP_Base的PivotState连上PivotLayer
+
+![1767344851568](image/LyraALS学习/1767344851568.png)
+
+#### PivotStateMachine
+
+回到ABP_Layer的PivotLayer
+
+> 由于急转存在一个方向的急转与另一个方向的急转之间也会存在跳转关系，比如：
+>
+> 玩家会在转向没结束的时候转到另一个方向，我们需要一个状态机来处理这种到处乱转的情况
+
+![1767345301743](image/LyraALS学习/1767345301743.png)
+
+![1767345309878](image/LyraALS学习/1767345309878.png)
+
+##### 跳转条件
+
+A与B的来回切换条件应该是相同的：
+
+1. 速度与加速度反向，也就是单位点积<0
+2. 速度 与 急转后的加速度 向量不平行
+
+两条规则同时满足
+
+![1767346714211](image/LyraALS学习/1767346714211.png)
+
+#### AState
+
+![1767347828632](image/LyraALS学习/1767347828632.png)
+
+##### SetupPivotAnims()
+
+![1767347897228](image/LyraALS学习/1767347897228.png)
+
+> 这里的Sequence选取动画资产和之前大致一样，但是需要根据加速度的角度来决定
+
+因此，我们需要先获取加速度的角度
+
+###### 获取加速度的角度，加速度的移动方向(E_LocomotionDirection类型变量)
+
+直接参考速度的这两个变量写
+
+![1767349062325](image/LyraALS学习/1767349062325.png)
+
+![1767349074875](image/LyraALS学习/1767349074875.png)
+
+> 整理一下UpdateOrientationData![1767349193299](image/LyraALS学习/1767349193299.png)
+
+回到ABP_Layers的SetupPivotAnims()
+
+这里的Sequence获取方式直接复制之前的，把Index换成加速度的移动方向
+
+![1767349376424](image/LyraALS学习/1767349376424.png)
+
+![1767351353479](image/LyraALS学习/1767351353479.png)
+
+右键把这个选择动画资产封装为一个函数
+
+![1767351384223](image/LyraALS学习/1767351384223.png)
+
+勾选为Pure函数以及线程安全
+
+![1767351561455](image/LyraALS学习/1767351561455.png)
+
+> 可以在其他Layer中也这样封装选择资产的函数，我就直接操作了，不在这里赘述，后面如果看到调用"SelectXXXAnims"就是这个选择对应资产函数
+
+同样的，回到各个子ABP_Layer中配置动画资产即可
+
+以ABP_PistoLayer为例
+
+> 注意：
+>
+> Pivot动画要注意动画的实际表现是什么样的，Lyra的动画资产中，pisto walk pivot Bwd实际上是衔接上一个Bwd和下一个Fwd
+>
+> 而我们上面写的动画资产选取是以当前的加速度移动方向，也就是已经发生实际的转向逻辑，所以应该把Bwd的动画资产放在Fwd的插槽，其他的动画资产同理
+
+![1767350186202](image/LyraALS学习/1767350186202.png)
+
+##### UpdatePivotAnims()
