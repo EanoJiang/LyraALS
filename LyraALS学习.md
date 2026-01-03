@@ -1383,3 +1383,116 @@ A与B的来回切换条件应该是相同的：
 ## 14 Turn in place Pro
 
 > 原地转身
+
+### 导入动画，开启根运动，应用压缩曲线
+
+### RotateRootBone
+
+> 根骨骼旋转节点
+
+#### UE中的三个旋转角
+
+UE使用的是左手坐标系：
+
+![](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213224769-1156683200.png)
+
+* Pitch：绕Y轴旋转
+* Roll：绕X轴旋转
+* Yaw：绕Z轴旋转
+
+因此加入新的节点RotateRootBone，原地转身应该改变的是Yaw，新建变量RootYawOffset
+
+![1767438979118](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213225448-1320721665.png)
+
+### UpdateRootYawOffset
+
+> 获得RootYawOffset
+
+相机水平转动，默认情况时角色朝向保持不变，当水平转角超过90度，朝向同步变化
+
+原先的逻辑是角色朝向随相机同步，我们只需要每帧让传入RotateRootBone节点的参数RootYawOffset减去相机转角就行
+
+前后帧相机转角——DeltaYaw（这个值我们之前就已经在GetRotationData中算过了）
+
+![1767440291951](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213226019-1457037128.png)
+
+#### 让角色朝向保持不变
+
+传入RotateRootBone节点的参数RootYawOffset减去这个DeltaActorYaw即可
+
+![1767440332139](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213226486-2045460271.png)
+
+这会导致运动时候角色的朝向也不变，那么转向就不能正常运作了，我们需要让这个逻辑只在Idle时起作用
+
+#### 只有在Idle时角色朝向才会保持不变
+
+用枚举类型区分Idle和其他状态
+
+![1767440579065](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213226833-40479716.png)
+
+![1767440708050](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213227152-1008369365.png)
+
+![1767441019972](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213227565-883844012.png)
+
+#### Debug显示RootYawOffset
+
+S_DebugOptions结构体加一个参数
+
+![1767441814566](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213227930-1535019380.png)
+
+![1767442733249](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213228228-143764960.png)
+
+![1767442720192](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213228642-847904934.png)
+
+#### 区分RootYawOffsetMode
+
+回到ABP_Base的IdleState，OutputPose绑定一个OnUpdate回调函数![1767445167279](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213229061-1885000871.png)
+
+Update Idle State直接赋值Mode为Accumulate即可，这样就会在Idle状态期间RootYawOffsetMode保持为Accumulate
+
+![1767445181599](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213229432-1525031579.png)
+
+回到UpdateRootYawOffset，让mode的默认值为BlendOut
+
+![1767445608465](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213229982-1968623183.png)
+
+封装一个函数专门用于设置RootYawOffset的值
+
+![1767446150861](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213230449-552512299.png)
+
+并且，如果当前的Mode是BlendOut，就重置RootYawOffset
+
+![1767446084494](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213230936-1630612046.png)
+
+这样就做到了Idle的时候摄像头移动不改变角色朝向，只有角色不在idle状态时才会改变朝向
+
+效果：
+
+![1767446467361](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213235814-383636647.gif)
+
+存在缺陷：角色朝向与相机朝向存在差异时，移动的时候会立刻重置RootYawOffset导致角色朝向突变，需要加一个插值过渡一下
+
+#### 插值过渡(RootYawOffset,0)
+
+Update Root Yaw Offset函数需要先新建一个Input参数DeltaTime，在安全线程中传入
+
+![1767446769566](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213236520-480187570.png)
+
+![1767446716113](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213236941-1150454704.png)
+
+效果：
+
+![1767447133616](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260103213241297-2076407423.gif)
+
+> `Float Spring Interp`（浮点弹簧插值）节点
+>
+> * **Current** ：弹簧插值的当前浮点数值（起始值）。
+> * **Target** ：弹簧插值最终要趋近的目标浮点数值。
+> * **Spring State** ：需变量存储的弹簧状态容器，记录跨帧的速度、加速度等动态数据。
+> * **Stiffness** ：弹簧的硬度，数值越大，趋近目标的速度越快。
+> * **Critical Damping Factor** ：控制回弹幅度，1.0 是无回弹的临界阻尼，<1 回弹、>1 缓慢趋近。
+> * **Delta Time** ：当前帧的时间增量，保证不同帧率下运动节奏一致。
+> * **Mass** ：弹簧末端物体的质量，数值越大，惯性越强、响应越慢。
+> * **Target Velocity Amount** ：目标速度的权重，数值越大，弹簧对目标速度变化的响应越灵敏。
+
+存在缺陷，RootYawOffset过渡到0期间方向适配OrientationWarping会失效，需要修复
