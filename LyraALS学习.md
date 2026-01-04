@@ -1496,3 +1496,235 @@ Update Root Yaw Offset函数需要先新建一个Input参数DeltaTime，在安�
 > * **Target Velocity Amount** ：目标速度的权重，数值越大，弹簧对目标速度变化的响应越灵敏。
 
 存在缺陷，RootYawOffset过渡到0期间方向适配OrientationWarping会失效，需要修复
+
+![1767495279129](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215726872-2061099694.png)
+
+这个带偏移的angle传入ABP_Layers的各个Layer的方向适配
+
+![1767495388538](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215727422-1302250189.png)
+
+![1767495478515](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215727940-1056155518.png)
+
+![1767495625093](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215728497-412371604.png)
+
+![1767495839562](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215728907-301153632.png)
+
+![1767495953027](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215729292-150177554.png)
+
+效果：
+
+![1767496377089](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215738229-1396217649.gif)
+
+> 起步会有滑步，以及移动时转动视角同时按下相反方向不会进到PivotState(待修复)
+
+### 曲线附加动画实现原地转身
+
+#### MotionExtractorModifier
+
+> 动作提取修改器：
+>
+> 从动画序列中，提取出角色的**位移、旋转、速度**等运动数据，用于驱动角色的实际移动
+
+暂时关闭RootMotion，可以看到转身动画是根骨骼的z轴在旋转，从0到-90(nearly)
+
+![1767498360756](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215740362-1388758470.png)
+
+并且需要将**曲线最终的值设置为0**，可以把曲线都上下翻转一下，然后手动在各个动画资产中对曲线进行上下限的重定义
+
+因此，添加MotionExtractorModifier如下设置：
+
+![1767498501842](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215740807-574965920.png)
+
+进入每个资产手动调整曲线上下限，目的是让最终的值为0，以90度和180度的转身动画资产为例：
+
+90度
+
+![1767507670556](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215741184-547503266.png)
+
+注意上下限要严格精确到-90(或-180)和0
+
+![1767507759767](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215741474-197888032.png)
+
+![1767507797834](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215741804-2020015165.png)
+
+180度
+
+![1767507889452](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215742170-908565078.png)
+
+#### 加一条IsTurning曲线，并标注两个关键帧
+
+第二个关键帧是root_rotation_z完全不变的第一个点，值为0
+
+第一个关键帧是第二个关键帧的前一个点，值为1
+
+> 这样，1和0对应true和false，true代表正在转身，false代表已经转身结束
+
+![1767509687128](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215742515-114842.png)
+
+![1767509779094](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215742839-1249307283.png)
+
+最终呈现先1后0的突变函数
+
+![1767510410230](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215743190-1010441230.png)
+
+如果想更自然的过渡，可以选中IsTurning曲线，右键Auto
+
+![1767510550674](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215743519-1240573302.png)
+
+得到更平滑的曲线
+
+![1767510561668](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215743823-1574331205.png)
+
+### TurnInplace States
+
+回到ABP_Layers，在IdleLayer新建一个IdleSM，用来管理IdleLayer下的逻辑
+
+![1767511016174](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215744178-728981150.png)
+
+![1767511028079](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215744562-920429459.png)
+
+原来Idle的SequencePlayer放进Idle State中
+
+![1767511061744](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215744912-953823351.png)
+
+#### Idle->TurnInPlaceEntry
+
+> 跳转条件：RootYawOffset超过一个阈值
+
+![1767511560049](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215748262-1072392508.gif)
+
+从RootYawOffset的变化可以看出，如果RootYawOffset>50左转，<-50右转是较为合适的值
+
+因此转身的阈值可以设置为50
+
+![1767511752510](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215748858-820696503.png)
+
+左/右转由RootYawOffset的正负决定,>0左转，<0右转
+
+当进入TurnInPlaceEntry State时，执行该判断
+
+![1767513404294](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215749220-309237188.png)
+
+![1767513375681](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215749584-444145043.png)
+
+#### TurnPlaceEntry State的SequenceEvaluator
+
+回到TurnPlaceEntry State，用SequenceEvaluator播放动画
+
+![1767515423224](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215750097-1305847214.png)
+
+##### SetupTurnInPlaceEntryAnims()
+
+![1767515361044](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215750570-1476007196.png)
+
+选择资产函数SelectTurnInPlaceAnims()
+
+![1767515706548](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215750953-1173528465.png)
+
+![1767515672771](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215751482-1704518993.png)
+
+然后在各子ABP_Layer中配置TurnInPlace动画资产
+
+以ABP_PistolLayer为例
+
+![1767516003546](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215751856-1790877968.png)
+
+##### UpdateTurnInPlaceEntryAnims()
+
+![1767517193828](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215752261-286288592.png)
+
+![1767517208929](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215752666-354556718.png)
+
+这里新加了一个随DeltaTime自增的变量TurnInPlaceTime，传入ExplicitTime之后动画播完需要重置为0，因此需要回到SetupTurnInPlaceEntryAnims设置它为0
+
+![1767517329203](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215753054-987502894.png)
+
+#### TurnInPlaceEntry->TurnInPlaceRecovery
+
+> 跳转条件：动画曲线IsTurning的值为0
+
+前面在转身动画资产中的曲线IsTurning由1跳变为0，0的时候就是转身完成，也就是进入TurnInPlaceRecovery
+
+![1767517764501](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215753496-297321272.png)
+
+注意要回到IdleSM把每帧最大跳转数改为1
+
+![1767517926548](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215753878-1025878049.png)
+
+并且这个跳转不需要过渡，因为播放的是同一个动画的不同阶段
+
+![1767520304499](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215754348-1188612173.png)
+
+下面设置TurnInPlaceEntry的动画播放器
+
+#### TurnInPlaceRecovery State
+
+![1767535203061](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104220014947-1015433979.png)
+
+前面UpdateTurnInPlaceEntryAnims()中设置的变量TurnInPlaceTime反映在这个曲线中就是会一直自增，在跳变到0的时候会积累到一个值，这个值我们在TurnInPlaceRecovery State中将作为动画播放的长度？
+
+![1767518078784](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215755448-2062836878.png)
+
+动画播放的时间解决了，选择的动画也要在TurnInPlaceRecovery State中调用
+
+因此UpdateTurnInPlaceEntryAnims()中把最终选择的转身动画存进一个单独的变量FinalTurnInPlaceAnim中
+
+![1767518993570](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215755855-267824417.png)
+
+回到TurnInPlaceRecovery State
+
+![1767520162228](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215756324-70705859.png)
+
+#### 让角色的转向同步转身动画曲线
+
+这个转向同步逻辑可以写在ABP_Base的Idle State的UpdateIdleState()中，
+
+新建函数ProcessTurnYawCurve()
+
+![1767521440952](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215756728-1024656575.png)
+
+逻辑是：
+
+如果此时曲线接近0，说明已经转身结束，那就重置这两个帧的值
+
+反之，正在转身过程中，我们就保存每一帧曲线关键帧的值，然后算出前后帧的曲线值差，最后RootYawOffset -=前后帧的曲线值差从而更新角色实际转向
+
+每一帧曲线关键帧的值 = root_rotation_Z曲线值 / IsTurning补偿曲线值，**这样会过渡更平滑？**
+
+![1767522859344](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215757082-1085338326.png)
+
+![1767532980222](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215757658-1747326951.png)
+
+![1767533012179](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215758124-691761091.png)
+
+![1767533043101](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215758621-1327356006.png)
+
+> SafeDivide：在执行除法前先判断除数，若除数为 0，会直接返回0
+
+#### TurnInPlaceRecovery -> Idle
+
+TurnInPlaceRecovery播放完自动跳转到Idle即可
+
+
+
+
+
+> 下面这种方法会存在bug，我们不用![1767533308054](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215759034-1221660596.png)
+
+可以手动获取当前动画剩余时间==0的时候跳转即可
+
+![1767533509682](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215759413-1800716160.png)
+
+#### TurnInPlaceRecovery -> TurnInPlaceEntry
+
+直接套用idle->TurnInPlaceEntry的跳转条件即可，并且这里和TurnInPlaceEntry-> TurnInPlaceRecovery一样由于播放的是同一个动画，不需要混合
+
+![1767533767768](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215759800-1691201549.png)
+
+最终效果：
+
+![1767535035021](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215807577-1169330714.gif)
+
+> 转身的时候还存在缺陷，180度转身时，有的时候会播放两段90度的转身
+>
+> 貌似是因为相机视角的原因，后面做相机部分的时候再考虑修不修
