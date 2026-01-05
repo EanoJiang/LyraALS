@@ -1728,3 +1728,11 @@ TurnInPlaceRecovery播放完自动跳转到Idle即可
 > 转身的时候还存在缺陷，180度转身时，有的时候会播放两段90度的转身
 >
 > 貌似是因为相机视角的原因，后面做相机部分的时候再考虑修不修
+
+## 15 Crouch gate Intermediate
+
+> 蹲伏
+
+在E_Gate中新加一个Gate——Crouching
+
+![1767596308687](image/LyraALS学习/1767596308687.png)
