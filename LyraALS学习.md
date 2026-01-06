@@ -1689,13 +1689,13 @@ Update Root Yaw Offset函数需要先新建一个Input参数DeltaTime，在安�
 
 反之，正在转身过程中，我们就保存每一帧曲线关键帧的值，然后算出前后帧的曲线值差，最后RootYawOffset -=前后帧的曲线值差从而更新角色实际转向
 
-每一帧曲线关键帧的值 = root_rotation_Z曲线值 / IsTurning补偿曲线值，**这样会过渡更平滑？**
+每一帧曲线关键帧的值 = root_rotation_Z曲线值
 
 ![1767522859344](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215757082-1085338326.png)
 
 ![1767532980222](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215757658-1747326951.png)
 
-![1767533012179](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215758124-691761091.png)
+![1767599170954](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003901821-1333754426.png)
 
 ![1767533043101](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215758621-1327356006.png)
 
@@ -1704,10 +1704,6 @@ Update Root Yaw Offset函数需要先新建一个Input参数DeltaTime，在安�
 #### TurnInPlaceRecovery -> Idle
 
 TurnInPlaceRecovery播放完自动跳转到Idle即可
-
-
-
-
 
 > 下面这种方法会存在bug，我们不用![1767533308054](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260104215759034-1221660596.png)
 
@@ -1727,12 +1723,246 @@ TurnInPlaceRecovery播放完自动跳转到Idle即可
 
 > 转身的时候还存在缺陷，180度转身时，有的时候会播放两段90度的转身
 >
-> 貌似是因为相机视角的原因，后面做相机部分的时候再考虑修不修
+> 貌似是因为相机视角的原因，后面做相机部分的时候再考虑修不修？(已经在Couch时的TurnInPlace章节解决了)
 
 ## 15 Crouch gate Intermediate
 
 > 蹲伏
 
+### 导入动画资产，RootMotion
+
+### Gate
+
 在E_Gate中新加一个Gate——Crouching
 
-![1767596308687](image/LyraALS学习/1767596308687.png)
+![1767596523726](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003902705-2056405362.png)
+
+角色蓝图BP_LyraCharacter中GateSettings
+
+![1767690967341](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235323676-1862716033.png)
+
+后面我们只需要进到每一个Layer中为对应的SelectAnims函数增加对应的Anims变量即可
+
+### Input
+
+创建输入IA_Crouch，值类型为bool
+
+在IMC_ALS中加进来
+
+![1767599597656](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003903016-389630046.png)
+
+回到角色事件蓝图，添加input事件
+
+由于蹲伏的时候还需要改变胶囊碰撞体的高度，因此需要向Character发出通知“Crouch / UnCrouch”
+
+![1767601304605](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003903507-1099824841.png)
+
+去characterMovement组件上打开Can Crouch
+
+![1767601718551](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003903907-692806388.png)
+
+蹲下后的碰撞体高度值修改为合适的值
+
+![1767601930573](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003904275-1243889314.png)
+
+↓
+
+![1767602064552](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003904548-226213985.png)
+
+### Idle蹲伏状态区分
+
+> 蹲伏动画一般会分为Crouch和UnCrouch，我们需要根据蹲伏状态判断来决定播放哪个动画，通过判断前后帧的IsCrouching是否相等来决定播放Crouch还是UnCrouch
+>
+> 比如：
+>
+> 上一帧没蹲，这一帧蹲了，那就播放蹲下
+>
+> 如果上一帧蹲，这一帧没蹲，那就播放起身
+
+回到ABP_Base的GetCharacterState()编写逻辑
+
+![1767604026296](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003906835-1063243214.png)
+
+之前的Idle Anim只包含Idle站立的动画，需要做个区分：Idle Stand和Idle Crouch(蹲伏又分为Crouch 和 UnCrouch)
+
+![1767604479296](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003907380-685561720.png)
+
+因此，
+
+IsCrouching用来区分Idle Stand和Idle Crouch，以及CrouchEntry和CrouchExit
+
+CrouchStateChanged用来判断是否从Idle过渡到Crouch
+
+#### Idle State
+
+> IsCrouching用来区分Idle Stand和Idle Crouch
+
+![1767604957033](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003907773-1599387642.png)
+
+![1767604979517](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003908185-106405144.png)
+
+在各个子ABP_Layer中设置CrouchIdle动画资产
+
+![1767605063629](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003908534-557389449.png)
+
+效果：
+
+![1767605362263](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003909410-816462467.png)
+
+#### StanceTransition State
+
+> IsCrouching用来区分CrouchEntry 和 CrouchExit
+
+把原来的Idle State用状态机再次拆分
+
+![1767605842277](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003909808-851212663.png)
+
+![1767686832145](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235324371-1109344472.png)
+
+![1767686858424](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235324872-551134133.png)
+
+![1767614527400](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003911394-1004524992.png)
+
+新建两个动画序列变量CrouchEntryAnim 和 CrouchExitAnim
+
+![1767614473033](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106003911008-343591592.png)
+
+##### SetupStanceTransitionAnim()
+
+![1767687910925](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235325313-1334603585.png)
+
+![1767687971549](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235325714-1501369525.png)
+
+在子ABP_Layer中配置动画资产
+
+以ABP_PistolLayer为例：
+
+![1767688080932](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235326065-627225977.png)
+
+![1767688080932](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235326065-627225977.png)
+
+#### Idle-> StanceTransition
+
+> CrouchStateChanged用来判断是否从Idle过渡到Crouch
+
+![1767686893077](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235326421-1162528711.png)
+
+#### StanceTransition -> Idle
+
+跳转条件1：和Idle-> StanceTransition一致
+
+跳转条件2：StanceTransition动画播完(注意这里要区分规则的优先级，自动完成播放恢复Idle优先级要比状态改变要低)
+
+![1767690742218](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235326785-1511781975.png)
+
+![1767688564864](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235327171-1339705476.png)
+
+### StartLayer加入Crouch
+
+> 动画资产处理：
+>
+> Crouch Start设置曲线压缩和距离曲线修改器
+
+设置身体侧倾的Crouching权重
+
+![1767689922810](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235327606-600751084.png)
+
+SelectStartAnims()
+
+![1767690396626](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235328014-480103578.png)
+
+![1767690464896](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235328374-270536953.png)
+
+### CycleLayer加入Crouch
+
+> 动画资产处理：
+>
+> 只需要确保Crouch Walk 开启了RootMotion
+
+![1767691804003](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235328784-727931031.png)
+
+![1767692484155](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235329196-913473012.png)
+
+![1767692464785](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235329553-307178828.png)
+
+> 发现蹲伏的速度和我们实际设定好的速度不一致，是因为CharacterMovement在进入蹲伏函数Crouch()时，会有自己的最大移动速度，这个最大移动速度和我们所选择的不一致，因此我们需要将其调整回来
+>
+> ![1767693213744](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235329885-671896048.png)
+>
+> 或者因为我们只需要Crouch()/UnCrouch的设置胶囊碰撞体高度这一个功能，所以其实我们可以不用这个CanCrouch，自己设置Crouch时的胶囊体高度也可以
+
+### StopLayer加入Crouch
+
+> 动画资产处理：
+>
+> Crouch Stop设置曲线压缩和距离曲线修改器
+>
+> 注意，如果动画出现跳帧的情况，勾上距离曲线修改器的Stop at End，这样就不会在末尾帧打上曲线
+>
+> ![1767704155589](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235330184-714749931.png)
+
+![1767700791547](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235330562-461971120.png)
+
+![1767700413630](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235331004-207844006.png)
+
+![1767700531502](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235331347-682093097.png)
+
+### PivotLayer加入Crouch
+
+> 动画资产处理：
+>
+> Crouch Pivot设置曲线压缩和距离曲线修改器
+
+![1767704448045](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235331742-522867138.png)
+
+![1767704464828](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235332145-999231920.png)
+
+![1767704603142](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235332562-306047347.png)
+
+> 注意：Pivot急转动画资产前后左右命名是相反的
+
+![1767705575306](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235332895-2112601362.png)
+
+> 回顾之前Pivot的对动画资产的处理，还需要在动画末尾加上回调通知notify，通知动画已经播完
+
+![1767706182533](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235333169-1435492543.png)
+
+### Crouch时的TurnInPlace
+
+> 蹲伏状态的原地转身
+
+把原来选择原地转身动画的函数封装一下
+
+![1767711912869](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235333546-1809995002.png)
+
+根据CurrentGate选择要传入SelectTurnAnims()的转身动画资产
+
+![1767711992307](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235334006-531155255.png)
+
+其中，把转身动画序列用结构体S_TurnInPlaceAnimations封装起来
+
+![1767710822845](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235334356-1786645388.png)
+
+![1767710791196](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235334670-2016782310.png)
+
+在SelectTurnAnims()中按原先逻辑break出对应动画序列传入即可
+
+![1767712381652](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235335153-306761496.png)
+
+![1767712573429](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235335544-435333979.png)
+
+然后我们需要和前面站立时候一样对动画资产进行处理——MotionExtractorModifier动作提取修改器、补偿曲线
+
+这部分不展示了，可以回去看14 Turn In Place Pro章节
+
+#### 修复之前转身时就已经发现的Bug——180度转身时，有的时候会播放两段90度的转身
+
+![1767714792833](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235335957-2038230973.png)
+
+最终Crouch效果：
+
+![1767715140654](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260106235927796-788623884.gif)
+
+## 16 Jump Animations Pro
+
+> 跳跃
