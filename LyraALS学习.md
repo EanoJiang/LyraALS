@@ -1967,12 +1967,119 @@ SelectStartAnims()
 
 > 跳跃
 
-Jump Start ->Start Loop->Apex->Fall_Loop->Fall_Land->RecoveryAdditive
+### 导入动画资产，Root Motion，压缩曲线
 
-有两种情况：
+### 输入事件
 
-1.完整的起跳落地
+新建IA_Jump，bool类型，两个Trigger(按下和松开，后面会用来区分短按和长按的起跳加速度)
 
-2.当从边沿到空中且无起跳输入时，只有落地
+![1767766016698](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220955115-2061422200.png)
 
-也就是Jump相关的状态机存在两种入口——JumpStart和JumpApex
+![1767766551094](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220955557-1533710561.png)
+
+添加到IMC_ALS中
+
+![1767766218379](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220956002-1223349807.png)
+
+调用CharacterMovement的函数Jump和StopJumpping
+
+![1767766366781](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220956581-174499329.png)
+
+设置CharacterMovement.Jump相关参数
+
+![1767766710951](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220956897-551525319.png)
+
+### 构建起跳阶段的状态机
+
+> Jump Start ->Jump Start Loop->JumpApex
+>
+> JumpApex
+
+分析动画资产：Jump Start ->Jump Start Loop->JumpApex->JumpFall_Loop->JumpFall_Land->JumpRecoveryAdditive
+
+有主动跳跃和被动跳跃两种情况：
+
+1.主动跳跃：完整的起跳落地：起跳-起跳循环-下落
+
+2.被动跳跃：当从边沿到空中且无起跳输入时，只有落地
+
+因此，Jump的起跳阶段状态机有两种入口——JumpStart和JumpApex
+
+![1767773892499](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220957367-718192404.png)
+
+> Conduit(管道)
+>
+> 可用于创建1对多、多对1或多对多的跃迁
+>
+> 最常用的是用它来分散状态机的入口点
+
+#### 跳转条件
+
+JumpAlias->JumpSelector以及JumpSelector本身的规则先都设置为真(后面会修改)
+
+![1767772267972](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220957762-1865930187.png)
+
+![1767772278661](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220958125-1381456931.png)
+
+
+#### 跳转条件参数的计算
+
+IsOnAir
+
+![1767773630799](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220958503-1636473211.png)
+
+IsJumping和IsFalling
+
+![1767776275967](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220958945-726445658.png)
+
+![1767776300344](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107220959448-536789924.png)
+
+测试一下两种Jump入口是否都能正常进入
+
+![1767775124608](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221001598-1986014687.gif)
+
+跳转正常
+
+#### JumpStart->JumpLoop
+
+> 跳转条件：动画播完自动跳转
+
+#### JumpLoop->JumpApex
+
+> 跳转条件：角色在重力加速度的情况下到达最高点所需要的时间<一个阈值
+
+z轴速度/重力加速度，最后取反就是到达最高所需时间
+
+![1767776767343](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221002206-1690051487.png)
+
+![1767776462557](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221002597-1247427607.png)
+
+#### 动画分层管理
+
+ALI_Lyra中新建JumpStartLayer、JumpStartLoopLayer、JumpApexLayer
+
+![1767779017974](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221002875-1609527999.png)
+
+ABP_Base中对应State连上对应Layer
+
+然后在ABP_Layers相应的Layer中用SequencePlayer播放
+
+JumpStartLayer
+
+![1767778190466](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221003252-257117055.png)
+
+JumpStartLoopLayer
+
+![1767779065663](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221003639-310948644.png)
+
+JumpApexLayer
+
+![1767779080787](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221004079-600737976.png)
+
+![1767779172895](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221004443-36409008.png)
+
+### 构建落地阶段的状态机
+
+> JumpApex->JumpFallLoop->JumpFallRecovery
+
+![1767780363148](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260107221004823-266863161.png)
