@@ -1966,3 +1966,13 @@ SelectStartAnims()
 ## 16 Jump Animations Pro
 
 > 跳跃
+
+Jump Start ->Start Loop->Apex->Fall_Loop->Fall_Land->RecoveryAdditive
+
+有两种情况：
+
+1.完整的起跳落地
+
+2.当从边沿到空中且无起跳输入时，只有落地
+
+也就是Jump相关的状态机存在两种入口——JumpStart和JumpApex
