@@ -2520,7 +2520,7 @@ Two Bone IK
 
 新建一个CopyBone节点，让hand_l复制前面设置的虚拟骨骼VB
 
-![1768131027229](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260111202545471-1497588091.png)
+![1768138882944](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260111214426680-1238801179.png)
 
 把相机弹簧臂设置为越肩视角，效果如下：
 
@@ -2529,7 +2529,10 @@ Two Bone IK
 > 这一章节如果要重定向为Meta human，可以参考：
 >
 > [【虚幻5 Metahuman 教程 - 如何完美重定向 Lyra 动画？ ](https://youtu.be/Xj-3mKwd5k8?si=7Va4Cgs3xAoXbUTB)
-
+>
+> 效果：
+>
+> ![1768139057025](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260111214431021-1348968659.gif)
 
 
 ## 20 Foots Intermediate
