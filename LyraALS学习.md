@@ -2455,3 +2455,79 @@ ALI_Lyra
 ![1767951070484](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260109173341300-369506183.gif)
 
 ## 19 Weapons Pro
+
+> 武器
+
+### 武器模型资产
+
+ORM贴图：R-AmbientOcclusion阴影，G-Rough粗糙度，B-Metallic金属度
+
+![1767952153019](image/LyraALS学习/1767952153019.png)
+
+在角色SketalMesh中添加Soket，添加预览Mesh用于调整位置：
+
+![1768118486962](image/LyraALS学习/1768118486962.png)
+
+![1768120056268](image/LyraALS学习/1768120056268.png)
+
+### 武器添加到角色class
+
+新建结构体S_Sockets
+
+![1768120280773](image/LyraALS学习/1768120280773.png)
+
+![1768120390442](image/LyraALS学习/1768120390442.png)
+
+注意命名规范
+
+![1768120514571](image/LyraALS学习/1768120514571.png)
+
+设置结构体的参数默认值
+
+![1768120571343](image/LyraALS学习/1768120571343.png)
+
+回到角色class，把武器添加到角色Mesh的子级
+
+![1768121333018](image/LyraALS学习/1768121333018.png)
+
+### 在角色蓝图中编写持枪的逻辑(这部分可以用C++重构)
+
+![1768123057599](image/LyraALS学习/1768123057599.png)
+
+![1768123038675](image/LyraALS学习/1768123038675.png)
+
+用Attach Component To Component
+
+![1768123026271](image/LyraALS学习/1768123026271.png)
+
+### IK解决持枪时手部摆放问题
+
+![1768130300194](image/LyraALS学习/1768130300194.png)
+
+HandIkRetargeting
+
+![1768130313785](image/LyraALS学习/1768130313785.png)
+
+Two Bone IK
+
+![1768130365149](image/LyraALS学习/1768130365149.png)
+
+### 修复移动时手部摆放问题
+
+![1768130946340](image/LyraALS学习/1768130946340.png)
+
+![1768130953627](image/LyraALS学习/1768130953627.png)
+
+新建一个CopyBone节点，让hand_l复制前面设置的虚拟骨骼VB
+
+![1768131027229](image/LyraALS学习/1768131027229.png)
+
+把相机弹簧臂设置为越肩视角，效果如下：
+
+![1768132005311](image/LyraALS学习/1768132005311.gif)
+
+> 这一章节如果要重定向为Meta human，可以参考：
+>
+> [【虚幻5 Metahuman 教程 - 如何完美重定向 Lyra 动画？ ](https://youtu.be/Xj-3mKwd5k8?si=7Va4Cgs3xAoXbUTB)
+
+## 20 Foots Intermediate
