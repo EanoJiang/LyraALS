@@ -3003,3 +3003,16 @@ Crouch时瞄准保持Crouch状态
 ![1768741740193](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119001132245-1732994246.png)
 
 Locomotion用的动画通知设置好了，下面需要把通知加到所有的动画资产中
+
+> 这里我开发了一个用于批量处理动画资产的编辑器工具。它可以根据动画中已有的 **Anim Notify** （含Sync Marker同步标记）的名字，在同一帧自动添加指定的 **AnimNotify 类**
+>
+> github：https://github.com/EanoJiang/AnimNotifyBatchTool
+>
+> <pre class="vditor-reset" placeholder="" contenteditable="true" spellcheck="false"><p data-block="0"><img src="https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119112758971-352802805.png" alt="1768792786847"/></p><p data-block="0"><img src="https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119112759599-1730860455.png" alt="1768792830222"/></p></pre>
+>
+
+对于一些Sync Marker修改器无法标记的动画资产，比如原地转身，则需要手动添加通知
+
+并且由于Sync Marker只在脚部完全落地时才标记左右脚，因此还需要对自动添加的通知所在帧进行略微向前调整(这一部分重复度太高，后面再做)
+
+### 改变脚步音量大小
