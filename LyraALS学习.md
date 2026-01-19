@@ -2798,6 +2798,8 @@ Crouch时瞄准保持Crouch状态
 
 ## 23 Audio Intermediate
 
+> 音效
+
 ### 导入音频资产
 
 ### 开火声音
@@ -2980,9 +2982,15 @@ Crouch时瞄准保持Crouch状态
 
 ![1768740361745](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119001130073-2111352137.png)
 
-![1768740418964](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119001130354-1633462671.png)
+新建MetaSound：MS_FootOnGround，与MS_PlayRandomSound的唯一区别是在Out Mono加一个的音量调节，并设置好默认值和区间
 
-![1768740423904](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119001130657-462291523.png)
+![1768820722963](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200118967-499047715.png)
+
+![1768820680721](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200119426-731870175.png)
+
+![1768823919206](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200119785-744950433.png)
+
+然后创建四个MSP
 
 因为动画曲线中标记了动画的左右脚，因此需要两个动画通知来管理，这两个通知类是AN_FootOnGround动画通知的子类
 
@@ -3009,10 +3017,37 @@ Locomotion用的动画通知设置好了，下面需要把通知加到所有的�
 > github：https://github.com/EanoJiang/AnimNotifyBatchTool
 >
 > <pre class="vditor-reset" placeholder="" contenteditable="true" spellcheck="false"><p data-block="0"><img src="https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119112758971-352802805.png" alt="1768792786847"/></p><p data-block="0"><img src="https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119112759599-1730860455.png" alt="1768792830222"/></p></pre>
->
 
 对于一些Sync Marker修改器无法标记的动画资产，比如原地转身，则需要手动添加通知
 
 并且由于Sync Marker只在脚部完全落地时才标记左右脚，因此还需要对自动添加的通知所在帧进行略微向前调整(这一部分重复度太高，后面再做)
 
 ### 改变脚步音量大小
+
+在基类AN_FootOnGround把原来的PlaySoundAtLocation节点换成SpawnSoundAtLocation，这会返回一个AudioComponent，然后用SetFloatParameter设置其参数，因为前面在MS中加入了Volume音量调节输入，因此这里的InName填Volume，下面的InFloat稍后根据当前速度处理
+
+![1768821815821](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200120255-1959575747.png)
+
+> 我们已经在动画蓝图ABP_Base中获取过当前角色的速度，那么如何在其他蓝图中访问这个参数？
+
+我们需要在BPI接口中添加方法，并添加Output
+
+![1768822331276](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200120643-897056230.png)
+
+![1768822216674](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200120945-805835446.png)
+
+然后在ABP_Base中实现这个方法
+
+![1768822379688](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200121312-888672587.png)
+
+回到AN_FootOnGround，用AnimIntance调用动画蓝图中的方法，并根据DT_WeaponGates中的速度范围，钳制0-500映射为0-2.0，存在为Volume传入SetFloatParameter节点的InFloat
+
+![1768823847823](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200121797-1701105697.png)
+
+![1768823239659](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200122165-1655554166.png)
+
+![1768823362543](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260119200122615-717569723.png)
+
+## 24 Visual effects Intermediate
+
+> 特效
