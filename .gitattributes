@@ -1,3 +1,5 @@
 # Auto detect text files and perform LF normalization
 SKM_MH_Ellie_FaceMesh.uasset filter=lfs diff=lfs merge=lfs -text
 MH_Ellie.uasset filter=lfs diff=lfs merge=lfs -text
+SmokeSwirl_3_Flipbook_CHANNELPACK.uasset|T_Explosion_Areal_E64.uasset|LDR_Squib_2_rop_comp1_0001_flipbook.uasset|ultkedqjw_4K_Normal_LOD0.uasset|ultkedqjw_4K_Albedo.uasset filter=lfs diff=lfs merge=lfs -text
+SmokeSwirl_3_Flipbook_CHANNELPACK.uasset filter=lfs diff=lfs merge=lfs -text
