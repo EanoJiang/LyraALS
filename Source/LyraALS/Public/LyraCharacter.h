@@ -3,15 +3,31 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
+#include "GameFramework/Character.h"
 #include "LyraCharacter.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class LYRAALS_API ALyraCharacter : public APlayerController
+class LYRAALS_API ALyraCharacter : public ACharacter
 {
 	GENERATED_BODY()
-	
+
+public:
+	// Sets default values for this character's properties
+	ALyraCharacter();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	//Fire时的弹药管理逻辑
+	UFUNCTION(BlueprintCallable,Category="Bullet")
+	bool FireBulletManager(float InBulletAmount,float& OutBulletAmount);
+
 };
