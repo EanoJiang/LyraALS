@@ -30,4 +30,8 @@ public:
 	UFUNCTION(BlueprintCallable,Category="Bullet")
 	bool FireBulletManager(float InBulletAmount,float& OutBulletAmount);
 
+	//Reload时的弹药管理逻辑
+	UFUNCTION(BlueprintCallable,Category="Bullet")
+	void ReloadFlipBulletManager(float InClipAmount,float ClipSize,float& OutClipAmount,float& OutBulletAmount);
+
 };

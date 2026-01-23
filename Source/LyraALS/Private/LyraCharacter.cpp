@@ -42,3 +42,10 @@ bool ALyraCharacter::FireBulletManager(float InBulletAmount, float& OutBulletAmo
 	return false;
 }
 
+void ALyraCharacter::ReloadFlipBulletManager(float InClipAmount, float ClipSize, float& OutClipAmount,
+	float& OutBulletAmount)
+{
+	OutClipAmount = InClipAmount-1;
+	OutBulletAmount = ClipSize;
+}
+
