@@ -2,50 +2,48 @@
 
 
 #include "LyraCharacter.h"
+#include "Engine/DataTable.h"
 
 // Sets default values
 ALyraCharacter::ALyraCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
 void ALyraCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void ALyraCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
 void ALyraCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
-bool ALyraCharacter::FireBulletManager(float InBulletAmount, float& OutBulletAmount)
+bool ALyraCharacter::FireBulletManager(float& BulletAmount)
 {
-	if (InBulletAmount > 0)
+	if (BulletAmount > 0)
 	{
-		OutBulletAmount = InBulletAmount - 1;
+		BulletAmount--;
 		return true;
 	}
 	return false;
 }
 
-void ALyraCharacter::ReloadFlipBulletManager(float InClipAmount, float ClipSize, float& OutClipAmount,
-	float& OutBulletAmount)
+void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, float ClipSize, float& BulletAmount)
 {
-	OutClipAmount = InClipAmount-1;
-	OutBulletAmount = ClipSize;
+	if (ClipAmount > 0)
+	{
+		ClipAmount--;
+	}
+	BulletAmount = ClipSize;
 }
-

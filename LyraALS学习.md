@@ -3310,4 +3310,45 @@ Border，半透明黑色背景，白色边框
 
 ![1769183153201](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260123234834753-1455503562.png)
 
+## 番外篇：尝试把开火换弹时的弹药管理函数用c++来实现
+
+查看BP_LyraCharacter的父类为ACharacter
+
+新建c++类继承自ACharacter，名为LyraCharacter，然后BP_LyraCharacter改为继承于LyraCharacter
+
+LyraCharacter.h
+
+```cpp
+//Fire时的弹药管理逻辑
+UFUNCTION(BlueprintCallable,Category="Bullet")
+bool FireBulletManager(UPARAM(ref) float& BulletAmount);
+
+//Reload时的弹药管理逻辑
+UFUNCTION(BlueprintCallable,Category="Bullet")
+void ReloadFlipBulletManager(UPARAM(ref) float& ClipAmount,float ClipSize,UPARAM(ref) float& BulletAmount);
+```
+
+LyraCharacter.cpp
+
+```cpp
+bool ALyraCharacter::FireBulletManager(float& BulletAmount)
+{
+	if (BulletAmount > 0)
+	{
+		BulletAmount--;
+		return true;
+	}
+	return false;
+}
+
+void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, float ClipSize, float& BulletAmount)
+{
+	if (ClipAmount > 0)
+	{
+		ClipAmount--;
+	}
+	BulletAmount = ClipSize;
+}
+```
+
 ## 26 Health bar UI Intermediate

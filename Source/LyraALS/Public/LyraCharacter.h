@@ -19,7 +19,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -27,11 +27,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//Fire时的弹药管理逻辑
-	UFUNCTION(BlueprintCallable,Category="Bullet")
-	bool FireBulletManager(float InBulletAmount,float& OutBulletAmount);
+	UFUNCTION(BlueprintCallable, Category="Bullet")
+	bool FireBulletManager(UPARAM(ref) float& BulletAmount);
 
 	//Reload时的弹药管理逻辑
-	UFUNCTION(BlueprintCallable,Category="Bullet")
-	void ReloadFlipBulletManager(float InClipAmount,float ClipSize,float& OutClipAmount,float& OutBulletAmount);
-
+	UFUNCTION(BlueprintCallable, Category="Bullet")
+	void ReloadFlipBulletManager(UPARAM(ref) float& ClipAmount, float ClipSize,UPARAM(ref) float& BulletAmount);
 };
