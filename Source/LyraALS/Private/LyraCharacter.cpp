@@ -39,7 +39,7 @@ bool ALyraCharacter::FireBulletManager(float& BulletAmount)
 	return false;
 }
 
-void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, float ClipSize, float& BulletAmount)
+void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, const float ClipSize, float& BulletAmount)
 {
 	if (ClipAmount > 0)
 	{
