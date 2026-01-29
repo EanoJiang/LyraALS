@@ -3352,3 +3352,168 @@ void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, float ClipSize, 
 ```
 
 ## 26 Health bar UI Intermediate
+
+### 材质：用uv控制颜色百分比
+
+![1769590844357](image/LyraALS学习/1769590844357.png)
+
+> 固定值节点：按住1然后鼠标左键
+
+![1769591696515](image/LyraALS学习/1769591696515.png)
+
+### 生命值Health
+
+新建接口BPI_Character
+
+![1769592424842](image/LyraALS学习/1769592424842.png)
+
+![1769592358603](image/LyraALS学习/1769592358603.png)
+
+![1769592483114](image/LyraALS学习/1769592483114.png)
+
+#### 蓝图：
+
+![1769606418463](image/LyraALS学习/1769606418463.png)
+
+![1769608580205](image/LyraALS学习/1769608580205.png)
+
+![1769606397524](image/LyraALS学习/1769606397524.png)
+
+![1769606406948](image/LyraALS学习/1769606406948.png)
+
+![1769606435024](image/LyraALS学习/1769606435024.png)
+
+#### 用C++重写
+
+LyraCharacter.h
+
+```cpp
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Health)
+	float Health = 100;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Health)
+	float MaxHealth = 250;
+```
+
+```cpp
+	//更新增加生命值
+	UFUNCTION(BlueprintCallable, Category="Health")
+	void UpdateIncreaseHealth(UPARAM(ref) float& DelHealth);
+	//更新减少生命值
+	UFUNCTION(BlueprintCallable, Category="Health")
+	void UpdateDecreaseHealth(UPARAM(ref) float& DelHealth);
+```
+
+LyraCharacter.cpp
+
+```cpp
+void ALyraCharacter::UpdateIncreaseHealth(float& DelHealth)
+{
+	float TargetHealth = Health + DelHealth;
+	Health = (TargetHealth > MaxHealth )? MaxHealth : TargetHealth;
+}
+
+void ALyraCharacter::UpdateDecreaseHealth(float& DelHealth)
+{
+	float TargetHealth = Health - DelHealth;
+	Health = (TargetHealth < 0 )? 0 : TargetHealth;
+}
+```
+
+替换原来的函数即可
+
+效果：
+
+![1769608945258](image/LyraALS学习/1769608945258.gif)
+
+### 护盾Shield
+
+> 直接用C++书写增加减少护盾的逻辑
+
+#### 减少护盾
+
+LyraCharacter.h
+
+```cpp
+UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Health)
+float Shield = 40;
+UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Health)
+float MaxShield = 100;
+```
+
+LyraCharacter.cpp
+
+```cpp
+void ALyraCharacter::UpdateDecreaseHealth(float& DelHealth)
+{
+	if (Shield >= DelHealth )
+	{
+		//护盾能覆盖
+		Shield -= DelHealth;
+	}
+	else
+	{
+		//护盾值<要减少的生命值
+		float TrueDelHealth = DelHealth - Shield;	//真正减少的生命值
+		Shield = 0;	//护盾归零
+		float TargetHealth = Health - TrueDelHealth;
+		Health = (TargetHealth < 0 )? 0 : TargetHealth;
+	}
+}
+```
+
+#### 增加护盾
+
+在BPI_Character中新建IncreaseShield()
+
+![1769614498139](image/LyraALS学习/1769614498139.png)
+
+LyraCharacter.h
+
+```cpp
+//更新增加护盾
+UFUNCTION(BlueprintCallable, Category="Health")
+void UpdateIncreaseShield(UPARAM(ref) float& DelShield);
+```
+
+LyraCharacter.cpp
+
+```cpp
+void ALyraCharacter::UpdateIncreaseShield(float& DelShield)
+{
+	float TargetShield = Shield + DelShield;
+	Shield = (TargetShield > MaxShield )? MaxShield : TargetShield;
+}
+```
+
+#### UI Widget
+
+![1769615341662](image/LyraALS学习/1769615341662.png)
+
+![1769615420418](image/LyraALS学习/1769615420418.png)
+
+![1769615680980](image/LyraALS学习/1769615680980.png)
+
+![1769667949878](image/LyraALS学习/1769667949878.png)
+
+![1769667963617](image/LyraALS学习/1769667963617.png)
+
+回到BPI_Widgets，新建UpdateShieldAmount
+
+![1769668021782](image/LyraALS学习/1769668021782.png)
+
+在WBP_Shield中继承BPI_Widgets这个接口
+
+![1769668288592](image/LyraALS学习/1769668288592.png)
+
+![1769668913512](image/LyraALS学习/1769668913512.png)
+
+在BeginPlay也更新护盾UI
+
+![1769668934827](image/LyraALS学习/1769668934827.png)
+
+![1769668670614](image/LyraALS学习/1769668670614.png)
+
+效果：
+
+![1769669158479](image/LyraALS学习/1769669158479.gif)

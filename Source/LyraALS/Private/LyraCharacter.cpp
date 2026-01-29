@@ -47,3 +47,33 @@ void ALyraCharacter::ReloadFlipBulletManager(float& ClipAmount, const float Clip
 	}
 	BulletAmount = ClipSize;
 }
+
+void ALyraCharacter::UpdateIncreaseHealth(float& DelHealth)
+{
+	float TargetHealth = Health + DelHealth;
+	Health = (TargetHealth > MaxHealth )? MaxHealth : TargetHealth;
+
+}
+
+void ALyraCharacter::UpdateDecreaseHealth(float& DelHealth)
+{
+	if (Shield >= DelHealth )
+	{
+		//护盾能覆盖
+		Shield -= DelHealth;
+	}
+	else
+	{
+		//护盾值<要减少的生命值
+		float TrueDelHealth = DelHealth - Shield;	//真正减少的生命值
+		Shield = 0;	//护盾归零
+		float TargetHealth = Health - TrueDelHealth;
+		Health = (TargetHealth < 0 )? 0 : TargetHealth;
+	}
+}
+
+void ALyraCharacter::UpdateIncreaseShield(float& DelShield)
+{
+	float TargetShield = Shield + DelShield;
+	Shield = (TargetShield > MaxShield )? MaxShield : TargetShield;
+}
