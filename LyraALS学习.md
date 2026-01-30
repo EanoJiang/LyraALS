@@ -3557,3 +3557,83 @@ Rifle_Target
 ![1769678120575](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260129171532881-1311854721.gif)
 
 ## 27 Pickups Intermediate
+
+> 拾取物品
+
+Item.h
+
+```cpp
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "Item.generated.h"
+
+//物品类型
+UENUM(BlueprintType)
+enum class EItemType : uint8
+{
+	Health,
+	Shield,
+	PistolClip,
+	RifleClip
+};
+
+//物品属性
+USTRUCT(BlueprintType)
+struct FItemData : public FTableRowBase
+{
+	GENERATED_BODY()
+ 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item Data")
+	FName Name;
+ 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item Data")
+	EItemType ItemType;
+ 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item Data")
+	int32 Amount;
+};
+
+UCLASS()
+class LYRAALS_API AItem : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	//物品——数据表行
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (ExposeOnSpawn = true))
+	FDataTableRowHandle Item;
+
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:
+	// Sets default values for this actor's properties
+	AItem();
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+};
+
+```
+
+新建BP_Item继承自Item
+
+![1769766528701](image/LyraALS学习/1769766528701.png)
+
+新建数据表DT_Items,RowStructure选择Item.h中声明的ItemData
+
+![1769766667338](image/LyraALS学习/1769766667338.png)
+
+![1769766971509](image/LyraALS学习/1769766971509.png)
+
+回到BP_Item，选择数据表资产
+
+![1769767661333](image/LyraALS学习/1769767661333.png)
+
+然后BP_Item拖入场景中，复制多个，只需更改RowName
