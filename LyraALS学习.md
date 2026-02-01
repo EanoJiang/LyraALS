@@ -3560,6 +3560,8 @@ Rifle_Target
 
 > 拾取物品
 
+### 用数据表管理Pad类型
+
 Item.h
 
 ```cpp
@@ -3624,16 +3626,206 @@ public:
 
 新建BP_Item继承自Item
 
-![1769766528701](image/LyraALS学习/1769766528701.png)
+![1769766528701](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021616853-1708138121.png)
 
 新建数据表DT_Items,RowStructure选择Item.h中声明的ItemData
 
-![1769766667338](image/LyraALS学习/1769766667338.png)
+![1769766667338](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021617551-1920963243.png)
 
-![1769766971509](image/LyraALS学习/1769766971509.png)
+![1769766971509](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021617890-676243893.png)
 
 回到BP_Item，选择数据表资产
 
-![1769767661333](image/LyraALS学习/1769767661333.png)
+![1769767661333](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021618182-691731489.png)
 
 然后BP_Item拖入场景中，复制多个，只需更改RowName
+
+![1769953992143](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021618470-467957970.png)
+
+### 添加Pad
+
+Item.h
+
+```cpp
+	//Root
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* Root;
+	//平台
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* Pad;
+```
+
+Item.cpp
+
+```cpp
+// Sets default values
+AItem::AItem()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+	//Root
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+	//平台初始化
+    Pad = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad"));
+    Pad->SetupAttachment(RootComponent); 
+}
+```
+
+### 设置Pad的属性
+
+在BP_Item中的构造函数中，根据数据表每行的ItemType
+
+#### 设置Pad的StaticMesh
+
+![1769958654216](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021618938-1048386268.png)
+
+#### 设置Pad的材质
+
+暴露两个材质的参数
+
+![1769959702029](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021619280-1440673088.png)
+
+![1769959743644](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021619593-326220335.png)
+
+![1769960383695](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021620273-1477236284.png)
+
+### PickUp提示
+
+Item.h
+
+```cpp
+	//枪械提示
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	USkeletalMeshComponent* Weapon;
+	//特效
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UNiagaraComponent* NiagaraSystem;
+```
+
+Item.cpp
+
+```cpp
+AItem::AItem()
+{
+	//原来的代码
+
+	//Weapon
+	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
+	Weapon->SetupAttachment(Pad);
+	//特效
+	NiagaraSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara"));
+	NiagaraSystem->SetupAttachment(RootComponent);
+}
+```
+
+![1769964972615](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021620661-1470234649.png)
+
+#### 设置武器
+
+![1769964951742](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021621132-667106771.png)
+
+#### 设置特效
+
+找到NS_Item的颜色参数
+
+![1769964939020](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021621474-1467033045.png)
+
+![1769965266332](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021622043-1878013904.png)
+
+弹药不显示Niagara特效
+
+![1769965276790](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021622494-1392799203.png)
+
+效果：
+
+![1769965342019](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021623577-979705575.png)
+
+### PickUp逻辑
+
+#### 胶囊体触发器
+
+Item.h
+
+```cpp
+	//PickUp胶囊体触发器
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UCapsuleComponent* TriggerCapsule;
+```
+
+Item.cpp
+
+```cpp
+AItem::AItem()
+{
+ 	//原来的代码
+
+	//PickUp胶囊体触发器
+	TriggerCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("TriggerCapsule"));
+	TriggerCapsule->SetupAttachment(RootComponent);
+}
+```
+
+![1769965695329](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021624465-2115488074.png)
+
+设置碰撞类型为OverlapAllDynamic
+
+![1769966487959](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021624828-1288774063.png)
+
+#### 生命值和护盾值的触发事件
+
+![1769966815420](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021625295-529286696.png)
+
+![1769966823926](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021625747-715191449.png)
+
+![1769966665807](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021626127-1176498486.png)
+
+![1769966776973](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021628154-1866183371.png)
+
+#### 弹夹的触发事件
+
+回到BPI_Character，新建两个方法
+
+![1769967046428](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021628587-693220263.png)
+
+回到BP_LyraCharacter
+
+LyraCharacter.h
+
+```cpp
+	//更新增加手枪弹夹
+	UFUNCTION(BlueprintCallable, Category="Clip")
+	void UpdateIncreasePistolClip(UPARAM(ref) int& DelClip);
+	//更新增加长枪弹夹
+	UFUNCTION(BlueprintCallable, Category="Clip")
+	void UpdateIncreaseRifleClip(UPARAM(ref) int& DelClip);
+```
+
+LyraCharacte.cpp
+
+```cpp
+void ALyraCharacter::UpdateIncreasePistolClip(int& DelClip)
+{
+	float TargetClip = PistolClipAmount + DelClip;
+	PistolClipAmount = (TargetClip > MaxPistolClipAmount )? MaxPistolClipAmount : TargetClip;
+}
+
+
+void ALyraCharacter::UpdateIncreaseRifleClip(int& DelClip)
+{
+	float TargetClip = RifleClipAmount + DelClip;
+	RifleClipAmount = (TargetClip > MaxRifleClipAmount )? MaxRifleClipAmount : TargetClip;
+}
+```
+
+![1769969171300](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021629195-1375169473.png)
+
+在BP_Item中调取这个事件通知
+
+![1769969207068](https://img2024.cnblogs.com/blog/3614909/202602/3614909-20260202021629917-1447602596.png)
+
+效果：
+
+![1769969721187](image/LyraALS学习/1769969721187.gif)
+
+## 28 Landscape Intermediate

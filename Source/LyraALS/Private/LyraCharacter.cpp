@@ -77,3 +77,16 @@ void ALyraCharacter::UpdateIncreaseShield(float& DelShield)
 	float TargetShield = Shield + DelShield;
 	Shield = (TargetShield > MaxShield )? MaxShield : TargetShield;
 }
+
+void ALyraCharacter::UpdateIncreasePistolClip(int& DelClip)
+{
+	float TargetClip = PistolClipAmount + DelClip;
+	PistolClipAmount = (TargetClip > MaxPistolClipAmount )? MaxPistolClipAmount : TargetClip;
+}
+
+
+void ALyraCharacter::UpdateIncreaseRifleClip(int& DelClip)
+{
+	float TargetClip = RifleClipAmount + DelClip;
+	RifleClipAmount = (TargetClip > MaxRifleClipAmount )? MaxRifleClipAmount : TargetClip;
+}

@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NiagaraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
@@ -41,7 +43,21 @@ public:
 	//物品——数据表行
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (ExposeOnSpawn = true))
 	FDataTableRowHandle Item;
-	
+	//Root
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* Root;
+	//平台
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* Pad;
+	//枪械提示
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	USkeletalMeshComponent* Weapon;
+	//特效
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UNiagaraComponent* NiagaraSystem;
+	//PickUp胶囊体触发器
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UCapsuleComponent* TriggerCapsule;
 
 protected:
 	// Called when the game starts or when spawned
@@ -53,4 +69,5 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	
 };
