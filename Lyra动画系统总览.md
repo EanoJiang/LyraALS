@@ -1,4 +1,6 @@
-## Lyra中的动画蓝图框架
+## 白话Lyra中的动画蓝图框架
+
+> 参考博客：[【UE】Lyra动画系统拆解（框架篇） - 知乎](https://zhuanlan.zhihu.com/p/628247619)
 
 Lyra中的动画蓝图架构用到的最主要的技术是 **动画蓝图链接** ，通过动画层接口，实现动画状态与动画状态实现的解耦。同时，动画蓝图链接还有一个很重要的特性是： **只有被引用的动画资产才会被加载进入内存当中。** 如果动画蓝图链接对各个模块的划分比较合理的话，可以节省很多的内存资源，达到一个动态加载卸载的效果。
 
@@ -236,16 +238,111 @@ CycleLayer占据了最大的时间，所以AlwaysFollower；StartLayer是Can be 
 
 ### 跳跃状态
 
-将 **“跳跃”** 状态划分为了起跳（JumpStart），起跳循环（JumpStartLoop）和起跳最高点（JumpApex）。JumpStart->JumpStartLoop的规则是自动过渡规则，即JumpStart完成，脱离地面之后，开始进行上升状态的动画循环，即JumpStartLoop，直至达到最高点。
+> ->Jump Start ->Jump Start Loop->JumpApex
+>
+> ->JumpApex
 
-JumpStartLoop->Jump的过渡状态则是通过一个**TimeToJumpApex**的变量来过渡的，过渡条件是 **TimeToJumpApex<0.4，** 这个值是通过当前速度的Z值和重力加速度的Z值相除得到的，含义还需要多久当前速度Z会锐减为0，即达到跳跃的最大高度。
+![1774234604584](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114103714-1457778393.png)
 
-为什么过渡条件是TimeToJumpApex<0.4，个人的理解是这是和动画资产有关的。我们可以打开MM_Pistol_Jump_Apex和MM_Rifle_Jump_Apex，取消他们的强制根锁定和启用根运动，然后在细节面板中观察这个动画根节点在Z轴上的变化，可以看到大约都是在时间为0.4秒的位置完成了一次收腹，然后开始逐渐变为掉落的姿势。 **所以0.4的参数主要是和动画资产挂钩，需要预留完成在最高点动作的时间，否则会出现已经开始下落了才进行最高点的动作** 。如果这个值过小，比如设置成<0.1才开始过渡的话，可以很明显的感觉到动画和速度匹配不上，会出现瞬间停顿的感觉。
+将 **“跳跃”** 状态划分为了起跳（JumpStart），起跳循环（JumpStartLoop）和起跳最高点（JumpApex）。
 
-此外，由于Lyra判定是否是跳跃状态采用的是速度Z轴方向，所以当角色踩到场景中的跳板向上被弹射的时候，触发的也会是Jump状态。
+JumpAlias包含地面基础移动的所有状态
+
+并且分为主动跳跃和被动跳跃两种情况：
+
+1.主动跳跃：完整的起跳落地：起跳-起跳循环-下落
+
+2.被动跳跃：当从边沿到空中且无起跳输入时，只有落地
+
+因此，Jump的起跳阶段状态机有两种入口——JumpStart和JumpApex
+
+#### 过渡规则
+
+JumpSelector->JumpStart：IsJumping
+
+JumpSelector->JumpApex：IsFalling
+
+JumpStart->JumpStartLoop：自动过渡规则
+
+JumpStartLoop->JumpApex：角色在重力加速度的情况下到达最高点所需要的时间TimeToJumpApex<一个阈值0.4
+
+TimeToJumpApex的计算：-z轴速度/重力加速度
+
+> 阈值0.4
+>
+> 和动画资产有关：MM_Pistol_Jump_Apex和MM_Rifle_Jump_Apex，取消他们的强制根锁定和启用根运动，然后在细节面板中观察这个动画根节点在Z轴上的变化，可以看到大约都是在时间为0.4秒的位置完成了一次收腹，然后开始逐渐变为掉落的姿势。 **所以0.4的参数主要是和动画资产挂钩，需要预留完成在最高点动作的时间，否则会出现已经开始下落了才进行最高点的动作** 。如果这个值过小，比如设置成<0.1才开始过渡的话，可以很明显的感觉到动画和速度匹配不上，会出现瞬间停顿的感觉。
+
+#### 具体实现
 
 ### 下落状态
 
-跳跃状态之后会进入到下落状态。当然，如果是从平台掉落的情况，也会直接进入下落状态。但是Lyra在这个地方选择让角色在进入掉落状态的时候先播放一次最高点的动画，然后再进入FallLoop。但我自己尝试了一下，将这条过渡线直接连到FallLoop状态上的表现似乎也不会有太大的差异。
+> JumpApex->JumpFallLoop->JumpFallLand->EndOnAir
 
-之后就是FallLoop下落循环到FallLand状态，和上升状态很像，这里的FallLoop->FallLand的过渡是通过到地面的距离来判定的，过度规则为GroundDistance<200。但是这个变量却是在C++类LyraAnimInstance，即这个状态机中的父类更新的，方法也是通过获取CharacterMovement组件然后获取距离地面的距离信息。
+![1774235341031](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114104335-731516647.png)
+
+#### 过渡规则
+
+JumpApex->JumpFallLoop：自动过渡规则
+
+JumpFallLoop->JumpFallLand：在角色蓝图中采用向下的球体追踪击中返回的信息与角色脚部的位置相减得到z轴距离GroundDistance < 一个阈值150
+
+>> 怎么在角色蓝图和动画蓝图通信？
+>>
+>> 可以回顾02 Blueprint communication Intermediate/Blueprint Interfaces
+>>
+>
+> 用接口BPI_AnimationBluprintsInterface传输
+>
+> ![1767856751489](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260108211011944-1705575994.png)
+>
+> ![1767857036976](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260108211012223-260864058.png)
+>
+> 这个接口的函数在BP可以直接调用，在ABP中需要继承才能使用
+>
+> 角色蓝图
+>
+> ![1767857247593](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260108211012637-1147494115.png)
+>
+> ABP_Base
+>
+> ![1767857475655](https://img2024.cnblogs.com/blog/3614909/202601/3614909-20260108211013078-700889845.png)
+
+JumpFallLand->EndOnAir：不在空中
+
+EndOnAir->IdleAlias：速度≈0
+
+EndOnAir->CycleAlias：速度>0
+
+并且为了防止同时触发，->CycleAlias的优先级设置为1，->IdleAlias的优先级设置为2
+
+> Jump提前落地机制
+
+Lyra的落地还有一个Jump提前落地机制，也就是跳跃过程可以被一些状态打断
+
+JumpInteruptAlias包含JumpStart、Apex、Loop、FallLoop
+
+JumpInteruptAlias->EndOnAir：不在空中(和JumpFallLand->EndOnAir一样)
+
+#### 叠加层：落地缓冲
+
+和其他Layer一样是独立的Layer
+
+![1774236111441](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114104809-710236565.png)
+
+![1774236150024](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114105215-798580777.png)
+
+Default->OnAir：在空中
+
+OnAir->JumpFallLandRecovery：不在空中
+
+JumpFallLandRecovery->Default：1.自动过渡规则 2.在空中
+
+##### 落地缓冲状态的具体实现
+
+叠加姿势+当前状态的具体动画序列 Blend实现
+
+![1774236429123](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114105618-1299341964.png)
+
+Alpha这个参数在状态机到达JumpFallLandRecovery状态实时更新，也就是LandRecoveryStart()，通过debug发现Idle起跳时FallingTime通常是0.4，所以先把FallingTime输入限制在0-~0.4，映射到0.1-1.0输出到LandRecoveryAlpha，如果是移动状态下就再乘以0.5放缩一下，避免alpha过大导致落地脚部畸形；考虑到如果起跳过一次后直接从高处落下，这个FallingTime需要在JumpApex的Relevent函数中也要重置为0
+
+![1774236526910](https://img2024.cnblogs.com/blog/3614909/202603/3614909-20260323114106062-1454571490.png)
